@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personaje Dona 3D</title>
+
+    <style>
+        body {
+            background: #f5efdf;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            max-width: 95%;
+            background: #fffaf0;
+            border: 2px solid #333;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Personaje Dona 3D</h1>
+
+<canvas id="lienzo" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("lienzo");
+const ctx = canvas.getContext("2d");
+
+let angulo = 0;
+
+const vertices = [];
+const caras = [];
+
+const R = 0.9;
+const r = 0.42;
+const N = 40;
+const M = 16;
+
+// Crear el cuerpo 3D de la dona
+for (let i = 0; i < N; i++) {
+    for (let j = 0; j < M; j++) {
+        let u = i * Math.PI * 2 / N;
+        let v = j * Math.PI * 2 / M;
+
+        vertices.push({
+            x: (R + r * Math.cos(v)) * Math.cos(u),
+            y: (R + r * Math.cos(v)) * Math.sin(u),
+            z: r * Math.sin(v)
+        });
+    }
+}
+
+// Crear las caras del cuerpo
+for (let i = 0; i < N; i++) {
+    for (let j = 0; j < M; j++) {
+        let a = i * M + j;
+        let b = ((i + 1) % N) * M + j;
+        let c = ((i + 1) % N) * M + (j + 1) % M;
+        let d = i * M + (j + 1) % M;
+
+        caras.push([a, b, c, d]);
+    }
+}
+
+// Rotación común para todas las piezas
+function rotar(p) {
+    let x = p.x * Math.cos(angulo)
+          - p.z * Math.sin(angulo);
+
+    let z = p.x * Math.sin(angulo)
+          + p.z * Math.cos(angulo);
+
+    let y2 = p.y * Math.cos(0.45)
+           - z * Math.sin(0.45);
+
+    let z2 = p.y * Math.sin(0.45)
+           + z * Math.cos(0.45);
+
+    return {
+        x: x,
+        y: y2,
+        z: z2
+    };
+}
+
+// Proyección de 3D a 2D
+function proyectar(p) {
+    p = rotar(p);
+
+    let d = p.z + 4.5;
+
+    return {
+        x: p.x * 250 / d + 300,
+        y: -p.y * 250 / d + 300,
+        z: d
+    };
+}
+
+// Dibujar líneas 3D
+function linea(a, b, color, grosor) {
+    let p = proyectar(a);
+    let q = proyectar(b);
+
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(q.x, q.y);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = grosor;
+    ctx.lineCap = "round";
+    ctx.stroke();
+}
+
+// Dibujar óvalos para manos, pies y ojos
+function esfera(p, rx, ry, color) {
+    let q = proyectar(p);
+
+    ctx.beginPath();
+    ctx.ellipse(q.x, q.y, rx, ry, 0, 0, Math.PI * 2);
+
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    ctx.strokeStyle = "#211b18";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+}
+
+// Animación
+function dibujar() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dibujar el cuerpo de la dona
+    let puntos = vertices.map(proyectar);
+
+    let orden = caras.map(c => ({
+        c: c,
+        z: c.reduce((s, i) => s + puntos[i].z, 0) / 4
+    })).sort((a, b) => b.z - a.z);
+
+    for (let f of orden) {
+        let p = f.c.map(i => puntos[i]);
+
+        ctx.beginPath();
+        ctx.moveTo(p[0].x, p[0].y);
+
+        for (let i = 1; i < 4; i++) {
+            ctx.lineTo(p[i].x, p[i].y);
+        }
+
+        ctx.closePath();
+        ctx.fillStyle = "#ead0a0";
+        ctx.fill();
+
+        ctx.strokeStyle = "#b18b58";
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+    }
+
+    // Chispas de colores pegadas al cuerpo
+    for (let i = 0; i < 12; i++) {
+        let u = i * Math.PI * 2 / 12;
+        let v = 0.7;
+
+        let p = {
+            x: (R + r * Math.cos(v)) * Math.cos(u),
+            y: (R + r * Math.cos(v)) * Math.sin(u),
+            z: r * Math.sin(v)
+        };
+
+        let q = proyectar(p);
+
+        ctx.beginPath();
+        ctx.ellipse(q.x, q.y, 5, 10, u, 0, Math.PI * 2);
+        ctx.fillStyle = i % 2 ? "#83cbd0" : "#e88b9d";
+        ctx.fill();
+    }
+
+    // Brazos
+    linea(
+        {x: -0.8, y: -0.15, z: 0},
+        {x: -1.25, y: -0.3, z: 0},
+        "#8b603e", 20
+    );
+
+    linea(
+        {x: 0.8, y: -0.15, z: 0},
+        {x: 1.25, y: -0.3, z: 0},
+        "#8b603e", 20
+    );
+
+    // Piernas
+    linea(
+        {x: -0.4, y: -0.7, z: 0},
+        {x: -0.48, y: -1.15, z: 0},
+        "#8b603e", 22
+    );
+
+    linea(
+        {x: 0.4, y: -0.7, z: 0},
+        {x: 0.48, y: -1.15, z: 0},
+        "#8b603e", 22
+    );
+
+    // Manos más pequeñas
+    esfera(
+        {x: -1.3, y: -0.35, z: 0},
+        17, 16, "#171717"
+    );
+
+    esfera(
+        {x: 1.3, y: -0.35, z: 0},
+        17, 16, "#171717"
+    );
+
+    // Pies más pequeños
+    esfera(
+        {x: -0.5, y: -1.2, z: 0},
+        32, 17, "#171717"
+    );
+
+    esfera(
+        {x: 0.5, y: -1.2, z: 0},
+        32, 17, "#171717"
+    );
+
+    // Ojos grandes
+    esfera(
+        {x: -0.45, y: 1.0, z: 0.12},
+        35, 38, "#fffaf0"
+    );
+
+    esfera(
+        {x: 0.45, y: 1.0, z: 0.12},
+        35, 38, "#fffaf0"
+    );
+
+    // Pupilas
+    esfera(
+        {x: -0.45, y: 1.0, z: 0.22},
+        15, 21, "#171717"
+    );
+
+    esfera(
+        {x: 0.45, y: 1.0, z: 0.22},
+        15, 21, "#171717"
+    );
+
+    // Actualizar el giro
+    angulo += 0.012;
+
+    requestAnimationFrame(dibujar);
+}
+
+dibujar();
+</script>
+
+</body>
+</html>
