@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personaje Pan 3D</title>
+
+<style>
+body {
+    background: #f5efdf;
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+canvas {
+    max-width: 95%;
+    background: #fffaf0;
+    border: 2px solid #333;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Personaje Pan 3D</h1>
+<canvas id="lienzo" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("lienzo");
+const ctx = canvas.getContext("2d");
+
+let angulo = 0;
+
+const R = 1.35;
+const vertices = [];
+const caras = [];
+const N = 40;
+const M = 28;
+
+// Crear el cuerpo esférico 3D
+for (let i = 0; i <= M; i++) {
+    let lat = Math.PI * i / M;
+
+    for (let j = 0; j < N; j++) {
+        let lon = Math.PI * 2 * j / N;
+
+        vertices.push({
+            x: R * Math.sin(lat) * Math.cos(lon),
+            y: R * Math.cos(lat),
+            z: R * Math.sin(lat) * Math.sin(lon)
+        });
+    }
+}
+
+for (let i = 0; i < M; i++) {
+    for (let j = 0; j < N; j++) {
+        let a = i * N + j;
+        let b = i * N + (j + 1) % N;
+        let c = (i + 1) * N + (j + 1) % N;
+        let d = (i + 1) * N + j;
+
+        caras.push([a, b, c, d]);
+    }
+}
+
+// Rotar todas las piezas alrededor del mismo centro
+function rotar(p) {
+    let x = p.x * Math.cos(angulo)
+          - p.z * Math.sin(angulo);
+
+    let z = p.x * Math.sin(angulo)
+          + p.z * Math.cos(angulo);
+
+    let inclinacion = 0.18;
+
+    let y2 = p.y * Math.cos(inclinacion)
+           - z * Math.sin(inclinacion);
+
+    let z2 = p.y * Math.sin(inclinacion)
+           + z * Math.cos(inclinacion);
+
+    return {x: x, y: y2, z: z2};
+}
+
+// Convertir coordenadas 3D a 2D
+function proyectar(p) {
+    p = rotar(p);
+
+    let d = p.z + 5;
+
+    return {
+        x: p.x * 250 / d + 300,
+        y: -p.y * 250 / d + 300,
+        z: d
+    };
+}
+
+// Calcular la posición de una bola sobre la superficie
+function sobrePan(x, y, extra = 0.025) {
+    let z = Math.sqrt(Math.max(0, R * R - x * x - y * y));
+    return {x: x, y: y, z: z + extra};
+}
+
+// Dibujar una bola adherida al personaje
+function bola(p, radio, color) {
+    let q = proyectar(p);
+
+    // Ajustar el tamaño según la perspectiva
+    let escala = 250 / q.z;
+
+    ctx.beginPath();
+    ctx.arc(q.x, q.y, radio * escala, 0, Math.PI * 2);
+
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    ctx.strokeStyle = "#30221d";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Brillo
+    ctx.beginPath();
+    ctx.ellipse(
+        q.x - radio * escala * 0.3,
+        q.y - radio * escala * 0.35,
+        radio * escala * 0.22,
+        radio * escala * 0.12,
+        -0.5, 0, Math.PI * 2
+    );
+
+    ctx.fillStyle = "#ffe0e5";
+    ctx.fill();
+}
+
+// Dibujar líneas que giran con el personaje
+function linea(a, b, color, grosor) {
+    let p = proyectar(a);
+    let q = proyectar(b);
+
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(q.x, q.y);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = grosor;
+    ctx.lineCap = "round";
+    ctx.stroke();
+}
+
+// Dibujar óvalos unidos al modelo
+function ovalo(p, rx, ry, color) {
+    let q = proyectar(p);
+    let escala = 250 / q.z;
+
+    ctx.beginPath();
+    ctx.ellipse(
+        q.x, q.y,
+        rx * escala, ry * escala,
+        0, 0, Math.PI * 2
+    );
+
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    ctx.strokeStyle = "#29211d";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+}
+
+// Dibujar el cuerpo de atrás hacia delante
+function dibujarCuerpo() {
+    let puntos = vertices.map(proyectar);
+
+    let orden = caras.map(c => ({
+        cara: c,
+        z: c.reduce((s, i) => s + puntos[i].z, 0) / 4
+    })).sort((a, b) => b.z - a.z);
+
+    for (let f of orden) {
+        let p = f.cara.map(i => puntos[i]);
+
+        ctx.beginPath();
+        ctx.moveTo(p[0].x, p[0].y);
+
+        for (let i = 1; i < p.length; i++) {
+            ctx.lineTo(p[i].x, p[i].y);
+        }
+
+        ctx.closePath();
+        ctx.fillStyle = "#c98b4d";
+        ctx.fill();
+
+        ctx.strokeStyle = "#a66c3b";
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+    }
+}
+
+function dibujar() {
+    ctx.clearRect(0, 0, 600, 600);
+
+    // 1. Cuerpo
+    dibujarCuerpo();
+
+    // 2. Brazos
+    linea(
+        {x:-1.05, y:-0.05, z:0},
+        {x:-1.55, y:-0.30, z:0},
+        "#211c19", 13
+    );
+
+    linea(
+        {x:1.05, y:-0.05, z:0},
+        {x:1.55, y:-0.30, z:0},
+        "#211c19", 13
+    );
+
+    // 3. Manos pequeñas
+    bola({x:-1.58, y:-0.34, z:0}, 0.13, "#211c19");
+    bola({x:1.58, y:-0.34, z:0}, 0.13, "#211c19");
+
+    // 4. Piernas
+    linea(
+        {x:-0.48, y:-1.12, z:0},
+        {x:-0.53, y:-1.43, z:0},
+        "#211c19", 15
+    );
+
+    linea(
+        {x:0.48, y:-1.12, z:0},
+        {x:0.53, y:-1.43, z:0},
+        "#211c19", 15
+    );
+
+    // 5. Pies pequeños
+    bola({x:-0.60, y:-1.48, z:0}, 0.25, "#211c19");
+    bola({x:0.60, y:-1.48, z:0}, 0.25, "#211c19");
+
+    // 6. Bolas rosas pegadas al cuerpo
+    // Su profundidad se calcula usando la superficie del pan
+    bola(sobrePan(-0.82, 0.95), 0.23, "#ed9eae");
+    bola(sobrePan(0.82, 0.95), 0.23, "#ed9eae");
+
+    // Adornos rosados inferiores
+    bola(sobrePan(-0.65, -0.45), 0.23, "#ed9eae");
+    bola(sobrePan(-0.88, -0.72), 0.22, "#ed9eae");
+    bola(sobrePan(-0.92, -0.91), 0.23, "#ed9eae");
+
+    bola(sobrePan(0.65, -0.45), 0.23, "#ed9eae");
+    bola(sobrePan(0.88, -0.72), 0.22, "#ed9eae");
+    bola(sobrePan(0.92, -0.91), 0.23, "#ed9eae");
+
+    // 7. Ojos
+    ovalo(sobrePan(-0.38, 0.42, 0.06), 0.16, 0.23, "#fff8e9");
+    ovalo(sobrePan(0.38, 0.42, 0.06), 0.16, 0.23, "#fff8e9");
+
+    // Pupilas
+    ovalo(sobrePan(-0.38, 0.42, 0.10), 0.08, 0.15, "#171717");
+    ovalo(sobrePan(0.38, 0.42, 0.10), 0.08, 0.15, "#171717");
+
+    // 8. Cejas
+    linea(
+        sobrePan(-0.65, 0.75, 0.06),
+        sobrePan(-0.23, 0.72, 0.06),
+        "#171717", 9
+    );
+
+    linea(
+        sobrePan(0.23, 0.72, 0.06),
+        sobrePan(0.65, 0.75, 0.06),
+        "#171717", 9
+    );
+
+    // 9. Nariz rosa pegada a la superficie
+    bola(sobrePan(0, 0.05, 0.07), 0.30, "#ed9eae");
+
+    // Continuar el giro
+    angulo += 0.012;
+    requestAnimationFrame(dibujar);
+}
+
+dibujar();
+</script>
+
+</body>
+</html>
