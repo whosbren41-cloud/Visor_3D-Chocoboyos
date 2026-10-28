@@ -1,0 +1,428 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panquecito 3D</title>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+
+        #info {
+            position: absolute;
+            top: 15px;
+            width: 100%;
+            text-align: center;
+            color: #333;
+            pointer-events: none;
+        }
+
+        button {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 22px;
+            border: none;
+            border-radius: 10px;
+            background: #d6383b;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="info">
+        <h2>Panquecito 3D</h2>
+        <p>Personaje caminando de lado</p>
+    </div>
+
+    <button id="boton">Pausar movimiento</button>
+
+    <script type="module">
+        import * as THREE from
+        'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+
+        // ESCENA
+        const escena = new THREE.Scene();
+        escena.background = new THREE.Color(0xf5f5f5);
+
+        const camara = new THREE.PerspectiveCamera(
+            45,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            100
+        );
+
+        camara.position.set(0, 3.5, 11);
+        camara.lookAt(0, 1.7, 0);
+
+        const renderizador = new THREE.WebGLRenderer({
+            antialias: true
+        });
+
+        renderizador.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+
+        renderizador.setPixelRatio(
+            Math.min(window.devicePixelRatio, 2)
+        );
+
+        renderizador.shadowMap.enabled = true;
+        renderizador.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        renderizador.outputColorSpace = THREE.SRGBColorSpace;
+        renderizador.toneMapping = THREE.ACESFilmicToneMapping;
+        renderizador.toneMappingExposure = 1.2;
+
+        document.body.appendChild(renderizador.domElement);
+
+        // LUCES
+        escena.add(new THREE.HemisphereLight(
+            0xffffff, 0x999999, 2
+        ));
+
+        const luz = new THREE.DirectionalLight(0xffffff, 3);
+
+        luz.position.set(-4, 8, 6);
+        luz.castShadow = true;
+        luz.shadow.mapSize.set(1024, 1024);
+
+        escena.add(luz);
+
+        // MATERIALES
+        const material = (color, rugosidad = 0.65) =>
+            new THREE.MeshStandardMaterial({
+                color,
+                roughness: rugosidad
+            });
+
+        const rosa = material(0xf7aabb);
+        const rosaClaro = material(0xffc2cf);
+        const rojo = material(0xd83238, 0.28);
+        const cafe = material(0xd69a4e);
+        const cafeOscuro = material(0x9c612c);
+        const negro = material(0x171717);
+        const blanco = material(0xffffff);
+
+        // GRUPO DEL PERSONAJE
+        const personaje = new THREE.Group();
+        escena.add(personaje);
+
+        // FUNCION PARA CREAR ESFERAS
+        function esfera(padre, nombre, x, y, z,
+                        sx, sy, sz, mat) {
+
+            const geometria = new THREE.SphereGeometry(
+                1, 32, 24
+            );
+
+            const objeto = new THREE.Mesh(geometria, mat);
+
+            objeto.name = nombre;
+            objeto.position.set(x, y, z);
+            objeto.scale.set(sx, sy, sz);
+
+            objeto.castShadow = true;
+            objeto.receiveShadow = true;
+
+            padre.add(objeto);
+
+            return objeto;
+        }
+
+        // FUNCION PARA CREAR CILINDROS
+        function cilindro(padre, x, y, z,
+                          radioArriba, radioAbajo,
+                          alto, mat) {
+
+            const geometria = new THREE.CylinderGeometry(
+                radioArriba,
+                radioAbajo,
+                alto,
+                32
+            );
+
+            const objeto = new THREE.Mesh(geometria, mat);
+
+            objeto.position.set(x, y, z);
+            objeto.castShadow = true;
+            objeto.receiveShadow = true;
+
+            padre.add(objeto);
+
+            return objeto;
+        }
+
+        // CAPACILLO
+        const base = cilindro(
+            personaje, 0, 1.35, 0,
+            0.85, 1.05, 1.35, cafe
+        );
+
+        // BORDE SUPERIOR DEL CAPACILLO
+        const borde = new THREE.Mesh(
+            new THREE.TorusGeometry(0.86, 0.09, 12, 48),
+            cafe
+        );
+
+        borde.rotation.x = Math.PI / 2;
+        borde.position.y = 2.03;
+        borde.castShadow = true;
+
+        personaje.add(borde);
+
+        // RAYAS DEL CAPACILLO
+        for (let i = 0; i < 12; i++) {
+            const angulo = (i / 12) * Math.PI * 2;
+
+            const raya = new THREE.Mesh(
+                new THREE.BoxGeometry(0.045, 1.1, 0.035),
+                cafeOscuro
+            );
+
+            raya.position.set(
+                Math.sin(angulo) * 0.87,
+                1.35,
+                Math.cos(angulo) * 0.87
+            );
+
+            raya.rotation.y = angulo;
+            personaje.add(raya);
+        }
+
+        // BETÚN: CAPAS REDONDEADAS
+        esfera(
+            personaje, "Betun inferior",
+            0, 2.12, 0,
+            1.22, 0.48, 0.85, rosa
+        );
+
+        esfera(
+            personaje, "Betun medio",
+            0, 2.48, 0,
+            1.02, 0.43, 0.76, rosa
+        );
+
+        esfera(
+            personaje, "Betun superior",
+            0, 2.79, 0,
+            0.76, 0.36, 0.62, rosaClaro
+        );
+
+        // CEREZA
+        esfera(
+            personaje, "Cereza",
+            0, 3.32, 0,
+            0.37, 0.39, 0.37, rojo
+        );
+
+        // BRILLO DE LA CEREZA
+        esfera(
+            personaje, "Brillo cereza",
+            -0.12, 3.45, 0.31,
+            0.07, 0.13, 0.035, blanco
+        );
+
+        // OJOS
+        esfera(
+            personaje, "Ojo izquierdo",
+            -0.34, 2.18, 0.70,
+            0.16, 0.20, 0.09, negro
+        );
+
+        esfera(
+            personaje, "Ojo derecho",
+            0.34, 2.18, 0.70,
+            0.16, 0.20, 0.09, negro
+        );
+
+        // BOCA SONRIENTE
+        const boca = new THREE.Mesh(
+            new THREE.TorusGeometry(0.14, 0.035, 12, 24, Math.PI),
+            negro
+        );
+
+        boca.position.set(0, 1.99, 0.76);
+        boca.rotation.z = Math.PI;
+        personaje.add(boca);
+
+        // BRAZOS ANIMADOS
+        function crearBrazo(lado) {
+            const brazo = new THREE.Group();
+
+            brazo.position.set(lado * 0.93, 1.8, 0);
+
+            personaje.add(brazo);
+
+            const manga = cilindro(
+                brazo, lado * 0.18, -0.24, 0,
+                0.11, 0.12, 0.48, rojo
+            );
+
+            manga.rotation.z = lado * -0.35;
+
+            esfera(
+                brazo, "Mano",
+                lado * 0.30, -0.53, 0,
+                0.23, 0.23, 0.23, negro
+            );
+
+            return brazo;
+        }
+
+        const brazoIzq = crearBrazo(-1);
+        const brazoDer = crearBrazo(1);
+
+        // PIERNAS ANIMADAS
+        function crearPierna(lado) {
+            const pierna = new THREE.Group();
+
+            pierna.position.set(lado * 0.40, 0.83, 0);
+
+            personaje.add(pierna);
+
+            cilindro(
+                pierna, 0, -0.24, 0,
+                0.12, 0.15, 0.48, negro
+            );
+
+            // Zapato
+            esfera(
+                pierna, "Zapato",
+                lado * 0.10, -0.52, 0.10,
+                0.34, 0.20, 0.28, negro
+            );
+
+            // Brillo del zapato
+            esfera(
+                pierna, "Brillo zapato",
+                lado * 0.02, -0.47, 0.34,
+                0.10, 0.045, 0.025, blanco
+            );
+
+            return pierna;
+        }
+
+        const piernaIzq = crearPierna(-1);
+        const piernaDer = crearPierna(1);
+
+        // SUELO
+        const suelo = new THREE.Mesh(
+            new THREE.PlaneGeometry(200, 200),
+            material(0xf5f5f5)
+        );
+
+        suelo.rotation.x = -Math.PI / 2;
+        suelo.position.y = -0.02;
+        suelo.receiveShadow = true;
+
+        escena.add(suelo);
+
+        // SOMBRA SUAVE SIMULADA
+        const sombra = new THREE.Mesh(
+            new THREE.CircleGeometry(1.05, 48),
+            new THREE.MeshBasicMaterial({
+                color: 0x999999,
+                transparent: true,
+                opacity: 0.18
+            })
+        );
+
+        sombra.rotation.x = -Math.PI / 2;
+        sombra.position.y = 0.005;
+
+        escena.add(sombra);
+
+        // ANIMACIÓN
+        const reloj = new THREE.Clock();
+
+        let pausado = false;
+        let tiempo = 0;
+
+        const velocidad = 1.8;
+        const limite = 3.5;
+
+        document.getElementById("boton").onclick = function () {
+            pausado = !pausado;
+
+            this.textContent = pausado
+                ? "Reanudar movimiento"
+                : "Pausar movimiento";
+        };
+
+        function animar() {
+            requestAnimationFrame(animar);
+
+            const delta = Math.min(reloj.getDelta(), 0.05);
+
+            if (!pausado) {
+                tiempo += delta;
+
+                // Movimiento horizontal de ida y vuelta
+                personaje.position.x =
+                    Math.sin(tiempo * velocidad) * limite;
+
+                // El personaje mira hacia donde camina
+                const direccion =
+                    Math.cos(tiempo * velocidad);
+
+                personaje.rotation.y =
+                    direccion >= 0 ? 0.30 : Math.PI - 0.30;
+
+                // Movimiento de caminar
+                const paso = tiempo * 7;
+
+                piernaIzq.rotation.z =
+                    Math.sin(paso) * 0.45;
+
+                piernaDer.rotation.z =
+                    Math.sin(paso + Math.PI) * 0.45;
+
+                brazoIzq.rotation.z =
+                    Math.sin(paso + Math.PI) * 0.30;
+
+                brazoDer.rotation.z =
+                    Math.sin(paso) * 0.30;
+
+                // Pequeños saltos al caminar
+                personaje.position.y =
+                    Math.abs(Math.sin(paso)) * 0.08;
+
+                // La sombra sigue al personaje
+                sombra.position.x = personaje.position.x;
+            }
+
+            renderizador.render(escena, camara);
+        }
+
+        animar();
+
+        // AJUSTE DE PANTALLA
+        window.addEventListener("resize", () => {
+            camara.aspect =
+                window.innerWidth / window.innerHeight;
+
+            camara.updateProjectionMatrix();
+
+            renderizador.setSize(
+                window.innerWidth,
+                window.innerHeight
+            );
+        });
+
+    </script>
+
+</body>
+</html>
