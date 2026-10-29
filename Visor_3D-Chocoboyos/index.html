@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#251a19" />
+  <title>Chocoboyos | Manga Glaseadora 3D</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="fallback.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-emblem" aria-hidden="true">✦</div>
+        <div>
+          <div class="eyebrow">EL OBRADOR · EQUIPAMIENTO</div>
+          <div class="brand-name">BATALLA <span>CHOCOBAYO</span></div>
+        </div>
+      </div>
+      <div class="header-right"><span class="status-dot"></span> PROTOTIPO INTERACTIVO <strong>V 1.0</strong></div>
+    </header>
+
+    <main class="layout">
+      <section class="showcase" aria-label="Visualizador 3D de la manga glaseadora">
+        <div class="stage" id="stage">
+          <div class="stage-pattern" aria-hidden="true"></div>
+          <div class="stage-noise" aria-hidden="true"></div>
+          <canvas id="world" aria-label="Modelo tridimensional animado de una manga glaseadora y una dona" tabindex="0"></canvas>
+          <div class="scene-mark scene-mark-top"><span class="tiny-star">✧</span> ARMA N.º 01 <span class="separator">/</span> VISTA 3D</div>
+          <div class="floating-pill" id="scene-status"><span class="pulse-dot"></span> MODELO ANIMADO</div>
+          <div class="stage-caption">
+            <div class="caption-main">LA DULZURA <em>TAMBIÉN</em> ES UN ARMA.</div>
+            <div class="caption-note">ARRASTRA PARA GIRAR <span>✧</span> RUEDA PARA ACERCAR</div>
+          </div>
+          <div class="stage-hud" aria-hidden="true"><div class="hud-cross">+</div><div class="hud-line"></div> TALLER DE REPOSTERÍA</div>
+        </div>
+        <div class="under-stage">
+          <span><span class="key">ESPACIO</span> DISPARAR</span>
+          <span><span class="key">1</span> <span class="key">2</span> <span class="key">3</span> CAMBIAR SABOR</span>
+          <span class="right-hint"><span class="mouse-icon">↔</span> ROTAR MODELO</span>
+        </div>
+      </section>
+
+      <aside class="loadout">
+        <div class="item-id"><span>CATÁLOGO DE ARMAS</span><span>01 / 02</span></div>
+        <div class="item-header">
+          <span class="item-icon" aria-hidden="true">✷</span>
+          <div class="category">EQUIPO ESPECIAL · GLASEADO</div>
+          <h1>MANGA<br /><i>GLASEADORA</i></h1>
+          <p>Pequeña, dulce y sorprendentemente peligrosa. ¡Lanza glaseado a tus enemigos con precisión pastelera!</p>
+        </div>
+        <div class="divider"></div>
+        <div class="label-row"><h2>ELIGE EL SABOR</h2><span>03 OPCIONES</span></div>
+        <div class="flavor-grid" role="group" aria-label="Seleccionar sabor de glaseado">
+          <button class="flavor-btn selected" type="button" data-flavor="fresa" aria-pressed="true"><span class="flavor-swatch strawberry"></span><strong>FRESA</strong><small>RÁPIDA</small></button>
+          <button class="flavor-btn" type="button" data-flavor="chocolate" aria-pressed="false"><span class="flavor-swatch cocoa"></span><strong>CHOCOLATE</strong><small>EQUILIBRADA</small></button>
+          <button class="flavor-btn" type="button" data-flavor="vainilla" aria-pressed="false"><span class="flavor-swatch vanilla"></span><strong>VAINILLA</strong><small>POTENTE</small></button>
+        </div>
+        <div class="stat-heading"><span id="flavor-name">FRESA</span><span id="flavor-note">VELOCIDAD MÁXIMA</span></div>
+        <div class="stat-line"><div class="stat-name"><span>VELOCIDAD</span><span id="speed-value">★★★★★</span></div><div class="bar-track"><div class="bar-fill" id="speed-bar" style="width:100%"></div></div></div>
+        <div class="stat-line"><div class="stat-name"><span>POTENCIA</span><span id="power-value">★★☆☆☆</span></div><div class="bar-track"><div class="bar-fill power" id="power-bar" style="width:40%"></div></div></div>
+        <button id="fire-btn" class="fire-btn" type="button"><span>✦</span> DISPARAR GLASEADO <span class="fire-arrow">➜</span></button>
+        <div class="bottom-controls">
+          <button class="toggle-btn active" id="auto-btn" type="button" aria-pressed="true"><span class="toggle-led"></span><span>ANIMACIÓN AUTOMÁTICA</span></button>
+          <button class="reset-btn" id="reset-btn" type="button" title="Restablecer cámara"><span>⟲</span> REINICIAR VISTA</button>
+        </div>
+        <div class="lore"><span class="lore-star">✳</span><p><strong>DATO DEL JUEGO</strong><br />La manga glaseadora es una de las armas que puedes elegir para Dona, Pan de Muerto y Panqué.</p></div>
+      </aside>
+    </main>
+    <footer class="footer"><span>CHOCOBOYOS <span class="footer-heart">♥</span> HECHO CON HTML + CSS + JAVASCRIPT</span><span>MODELO 3D EN WEBGL · SIN LIBRERÍAS EXTERNAS</span></footer>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
