@@ -1,0 +1,43 @@
+BATALLA CHOCOBAYO — MANGA GLASEADORA 3D
+========================================
+PROYECTO WEB / PROTOTIPO DE ARMA ANIMADA
+
+INSTRUCCIONES PARA ABRIR
+1. Extrae el contenido del archivo ZIP a una carpeta.
+2. Abre index.html con Microsoft Edge, Google Chrome o Firefox actualizado.
+3. NO necesitas instalar nada ni tener internet.
+4. Conserva index.html, style.css, script.js y fallback.js en la misma carpeta.
+
+CONTROLES
+- Clic en DISPARAR GLASEADO: activa el disparo animado.
+- Tecla ESPACIO: disparar.
+- Teclas 1, 2 y 3: cambiar Fresa, Chocolate o Vainilla.
+- Arrastrar el mouse sobre el lienzo: girar la cámara (vista 3D WebGL).
+- Rueda del mouse: zoom.
+- REINICIAR VISTA o tecla R: restaurar cámara.
+- ANIMACIÓN AUTOMÁTICA: activa o desactiva disparos periódicos.
+
+ESTILO Y CONTENIDO
+- Paleta crema, café y rojo ladrillo inspirada en el prototipo de Batalla Chocobayo.
+- Manga glaseadora con cuerpo cónico, pinza superior, costuras, etiqueta y boquilla metálica.
+- Dona glaseada sobre un pedestal de repostería con salpicaduras animadas.
+- Fresa: disparo rápido / menor potencia.
+- Chocolate: velocidad y potencia equilibradas.
+- Vainilla: disparo lento / mayor potencia.
+- Interfaz adaptable a pantalla de computadora y celular.
+
+TECNOLOGÍA UTILIZADA
+- HTML5 + CSS3 + JavaScript nativo.
+- Renderizado principal: WebGL con modelo 3D de mallas procedurales.
+- Si WebGL está bloqueado, se activa una vista 2D alternativa animada.
+- Sin Three.js, sin bibliotecas externas y sin archivos descargados de internet.
+
+ARCHIVOS
+index.html  -> estructura visual
+style.css   -> diseño responsivo, interfaz estilo pastelería
+script.js   -> motor 3D WebGL, animaciones, controles y sabores
+fallback.js -> visualización alternativa para navegadores sin WebGL
+
+NOTA
+Es un prototipo independiente de presentación del arma. No modifica el juego
+Batalla Chocobayo anterior, pero conserva los conceptos de la manga glaseadora.
