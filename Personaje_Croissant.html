@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cruasán Enfadado 3D Canvas</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #f4eae0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #3d2b1f;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            background-color: #fffbf5;
+            border: 4px solid #3d2b1f;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <h1>Cruasán Enfadado 3D</h1>
+    </div>
+
+    <canvas id="lienzo" width="600" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById("lienzo");
+        const context = canvas.getContext("2d");
+        let angulo = 0;
+
+        // Vértices 3D representando la estructura clave del cruasán,
+        // cuernos, cara, brazos y piernas
+        const vertices = [
+            // Cuerpo del cruasán (Centro e inclinaciones)
+            { x: 0, y: 0.8, z: 0 },       // 0: Centro superior
+            { x: -0.6, y: 0.5, z: 0.2 },  // 1: Pliegue izq sup
+            { x: 0.6, y: 0.5, z: 0.2 },   // 2: Pliegue der sup
+            { x: -1.3, y: 0.1, z: 0 },    // 3: Punta izq alta
+            { x: 1.3, y: 0.1, z: 0 },     // 4: Punta der alta
+            { x: -1.8, y: -0.3, z: -0.3 },// 5: Punta izq baja
+            { x: 1.8, y: -0.3, z: -0.3 }, // 6: Punta der baja
+            { x: -0.7, y: -0.7, z: 0.2 }, // 7: Pliegue izq inf
+            { x: 0.7, y: -0.7, z: 0.2 },  // 8: Pliegue der inf
+            { x: 0, y: -0.9, z: 0.3 },    // 9: Centro inferior
+
+            // Cuernos estilo masa (arriba)
+            { x: -0.3, y: 1.2, z: -0.1 }, // 10: Cuerno izq
+            { x: 0.3, y: 1.2, z: -0.1 },  // 11: Cuerno der
+
+            // Extremidades: Brazos
+            { x: -1.6, y: -0.8, z: 0.1 }, // 12: Puño izquierdo
+            { x: 1.6, y: -0.8, z: 0.1 },  // 13: Puño derecho
+
+            // Extremidades: Pies
+            { x: -0.5, y: -1.6, z: 0.2 }, // 14: Pie izquierdo
+            { x: 0.5, y: -1.6, z: 0.2 },  // 15: Pie derecho
+
+            // Ojos enojados (3D para seguir la rotación)
+            { x: -0.3, y: 0.2, z: 0.35 }, // 16: Ojo izq
+            { x: 0.3, y: 0.2, z: 0.35 }   // 17: Ojo der
+        ];
+
+        // Conexiones de las aristas en 3D
+        const aristas = [
+            // Cuerpo del cruasán
+            [0, 1], [0, 2], [1, 3], [2, 4], [3, 5], [4, 6],
+            [5, 7], [6, 8], [7, 9], [8, 9], [1, 7], [2, 8],
+            [1, 2], [7, 8],
+
+            // Cuernos
+            [0, 10], [1, 10], [0, 11], [2, 11],
+
+            // Brazos
+            [5, 12], [6, 13],
+
+            // Piernas
+            [7, 14], [8, 15]
+        ];
+
+        // Rotación alrededor del eje Y
+        function rotarY(p, a) {
+            const cos = Math.cos(a);
+            const sin = Math.sin(a);
+            return { x: p.x * cos + p.z * sin, y: p.y, z: -p.x * sin + p.z * cos };
+        }
+
+        // Rotación alrededor del eje X
+        function rotarX(p, a) {
+            const cos = Math.cos(a);
+            const sin = Math.sin(a);
+            return { x: p.x, y: p.y * cos - p.z * sin, z: p.y * sin + p.z * cos };
+        }
+
+        // Proyección 3D a 2D (Perspectiva)
+        function proyectar(p) {
+            const distancia = 4.5;
+            const zoom = 220;
+            const z = p.z + distancia;
+            const x2d = (p.x / z) * zoom + canvas.width / 2;
+            const y2d = (-p.y / z) * zoom + canvas.height / 2;
+            return { x: x2d, y: y2d, z: p.z };
+        }
+
+        function dibujar() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Calcular rotación y proyección de todos los puntos
+            const puntos = [];
+            for (let i = 0; i < vertices.length; i++) {
+                let p = rotarY(vertices[i], angulo);
+                p = rotarX(p, Math.sin(angulo * 0.5) * 0.15); // Suave balanceo en X
+                puntos.push(proyectar(p));
+            }
+
+            // 1. DIBUJAR ESTRUCTURA / ARISTAS (Tono dorado/marrón de cruasán)
+            context.strokeStyle = "#c67d34";
+            context.lineWidth = 3;
+            for (let i = 0; i < aristas.length; i++) {
+                const a = puntos[aristas[i][0]];
+                const b = puntos[aristas[i][1]];
+                context.beginPath();
+                context.moveTo(a.x, a.y);
+                context.lineTo(b.x, b.y);
+                context.stroke();
+            }
+
+            // 2. DIBUJAR PUÑOS Y PIES (Estilo dibujos animados vintage)
+            context.fillStyle = "#2b1e18";
+
+            // Puños
+            [12, 13].forEach(idx => {
+                context.beginPath();
+                context.arc(puntos[idx].x, puntos[idx].y, 14, 0, Math.PI * 2);
+                context.fill();
+            });
+
+            // Zapatos / Pies
+            [14, 15].forEach(idx => {
+                context.beginPath();
+                context.ellipse(puntos[idx].x, puntos[idx].y, 18, 10, 0, 0, Math.PI * 2);
+                context.fill();
+            });
+
+            // 3. DIBUJAR OJOS ENFADADOS (Si están de frente)
+            const ojoIzq = puntos[16];
+            const ojoDer = puntos[17];
+
+            // Ojo izquierdo
+            context.fillStyle = "#ffffff";
+            context.strokeStyle = "#000000";
+            context.lineWidth = 2;
+
+            [ojoIzq, ojoDer].forEach((ojo, i) => {
+                // Blanco de los ojos
+                context.beginPath();
+                context.arc(ojo.x, ojo.y, 12, 0, Math.PI * 2);
+                context.fill();
+                context.stroke();
+
+                // Pupila negra enojada
+                context.fillStyle = "#000000";
+                context.beginPath();
+                context.arc(ojo.x + (i === 0 ? 3 : -3), ojo.y + 2, 6, 0, Math.PI * 2);
+                context.fill();
+                context.fillStyle = "#ffffff";
+            });
+
+            // Cejas enfadadas
+            context.strokeStyle = "#000000";
+            context.lineWidth = 4;
+            
+            // Ceja izquierda
+            context.beginPath();
+            context.moveTo(ojoIzq.x - 14, ojoIzq.y - 12);
+            context.lineTo(ojoIzq.x + 10, ojoIzq.y - 2);
+            context.stroke();
+
+            // Ceja derecha
+            context.beginPath();
+            context.moveTo(ojoDer.x + 14, ojoDer.y - 12);
+            context.lineTo(ojoDer.x - 10, ojoDer.y - 2);
+            context.stroke();
+
+            // Boca enfadada
+            const centroBocaX = (ojoIzq.x + ojoDer.x) / 2;
+            const centroBocaY = (ojoIzq.y + ojoDer.y) / 2 + 20;
+            context.lineWidth = 3;
+            context.beginPath();
+            context.arc(centroBocaX, centroBocaY + 10, 12, Math.PI * 1.2, Math.PI * 1.8);
+            context.stroke();
+
+            // 4. NODOS / VÉRTICES DEL CRUASÁN
+            context.fillStyle = "#e09f47";
+            for (let i = 0; i < 12; i++) {
+                context.beginPath();
+                context.arc(puntos[i].x, puntos[i].y, 4, 0, Math.PI * 2);
+                context.fill();
+            }
+
+            // Incrementar ángulo para rotación continua
+            angulo += 0.015;
+            requestAnimationFrame(dibujar);
+        }
+
+        dibujar();
+    </script>
+</body>
+
+</html>
